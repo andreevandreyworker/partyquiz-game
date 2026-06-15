@@ -11,9 +11,10 @@ from app.repositories import GameRepository
 
 
 class CurrentUser:
-    def __init__(self, user_id: str, login: str):
+    def __init__(self, user_id: str, login: str, premium: bool = False):
         self.user_id = user_id
         self.login = login
+        self.premium = premium
 
 
 bearer = HTTPBearer(auto_error=False)
@@ -38,7 +39,9 @@ def get_current_user(
         )
     except jwt.PyJWTError:
         raise NotAuthenticatedError()
-    return CurrentUser(payload["sub"], payload["login"])
+    return CurrentUser(
+        payload["sub"], payload["login"], payload.get("premium", False)
+    )
 
 
 def decode_token(token: str) -> CurrentUser | None:
@@ -50,4 +53,6 @@ def decode_token(token: str) -> CurrentUser | None:
         )
     except jwt.PyJWTError:
         return None
-    return CurrentUser(payload["sub"], payload["login"])
+    return CurrentUser(
+        payload["sub"], payload["login"], payload.get("premium", False)
+    )

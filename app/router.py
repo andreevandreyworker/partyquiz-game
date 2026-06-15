@@ -34,7 +34,7 @@ async def create_room(
     controller: GameController = Depends(get_controller),
 ) -> RoomResponse:
     return await controller.create_room(
-        user.user_id, user.login, data
+        user.user_id, user.login, data, user.premium
     )
 
 

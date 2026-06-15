@@ -52,3 +52,4 @@ class CategoryResponse(BaseModel):
     id: str
     ru: str
     en: str
+    premium: bool = False

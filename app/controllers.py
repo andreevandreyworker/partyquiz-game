@@ -3,6 +3,7 @@ import string
 import uuid
 
 from app.bank import random_statement
+from app.categories import PREMIUM_CATEGORY_IDS
 from app.dto import (
     CreateRoomRequest,
     PlayerResponse,
@@ -34,13 +35,23 @@ class GameController:
         self._repo = repo
 
     async def create_room(
-        self, user_id: str, login: str, data: CreateRoomRequest
+        self,
+        user_id: str,
+        login: str,
+        data: CreateRoomRequest,
+        premium: bool = False,
     ) -> RoomResponse:
+        categories = data.categories
+        if not premium:
+            categories = [
+                c for c in categories
+                if c not in PREMIUM_CATEGORY_IDS
+            ]
         code = _gen_code()
         while await self._repo.get_room_by_code(code):
             code = _gen_code()
         room = await self._repo.create_room(
-            code, user_id, data.mode, data.categories
+            code, user_id, data.mode, categories
         )
         await self._repo.add_player(room.id, user_id, login, True)
         return await self._build(room, user_id)
