@@ -2,8 +2,7 @@ import random
 import string
 import uuid
 
-from app.bank import random_statement
-from app.categories import PREMIUM_CATEGORY_IDS
+from app import gameconfig
 from app.dto import (
     CreateRoomRequest,
     PlayerResponse,
@@ -24,9 +23,9 @@ from app.realtime import realtime
 from app.repositories import GameRepository
 
 
-def _gen_code() -> str:
+def _gen_code(length: int = 5) -> str:
     return "".join(
-        random.choices(string.ascii_uppercase + string.digits, k=5)
+        random.choices(string.ascii_uppercase + string.digits, k=length)
     )
 
 
@@ -43,13 +42,15 @@ class GameController:
     ) -> RoomResponse:
         categories = data.categories
         if not premium:
+            premium_ids = await gameconfig.get_premium_ids()
             categories = [
                 c for c in categories
-                if c not in PREMIUM_CATEGORY_IDS
+                if c not in premium_ids
             ]
-        code = _gen_code()
+        length = await gameconfig.get_int("room_code_length", 5)
+        code = _gen_code(length)
         while await self._repo.get_room_by_code(code):
-            code = _gen_code()
+            code = _gen_code(length)
         room = await self._repo.create_room(
             code, user_id, data.mode, categories
         )
@@ -90,13 +91,19 @@ class GameController:
         pending = await self._repo.count_pending_by_user(
             room.id, user_id
         )
-        if pending >= settings.max_pending_per_user:
+        max_pending = await gameconfig.get_int(
+            "max_pending_per_user", settings.max_pending_per_user
+        )
+        if pending >= max_pending:
             raise TooManyPendingError()
+        max_len = await gameconfig.get_int(
+            "question_max_length", settings.question_max_length
+        )
         statement = await self._repo.create_question(
             room.id,
             user_id,
             login,
-            text[: settings.question_max_length],
+            text[:max_len],
             "user",
         )
         await realtime.publish(
@@ -121,7 +128,7 @@ class GameController:
                 room.id,
                 None,
                 None,
-                random_statement(room.categories),
+                await gameconfig.random_statement(room.categories),
                 "bank",
             )
         await self._repo.set_question_status(nxt.id, "shown")

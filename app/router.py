@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
-from app.categories import CATEGORIES
+from app import gameconfig
 from app.controllers import GameController
 from app.dependencies import (
     CurrentUser,
@@ -24,7 +24,8 @@ router = APIRouter()
 
 @router.get("/categories", response_model=list[CategoryResponse])
 async def categories() -> list[CategoryResponse]:
-    return [CategoryResponse(**c) for c in CATEGORIES]
+    cats = await gameconfig.get_categories()
+    return [CategoryResponse(**c) for c in cats]
 
 
 @router.post("/rooms", response_model=RoomResponse)

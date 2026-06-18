@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class CreateRoomRequest(BaseModel):
     mode: str = Field(default="multi", pattern="^(multi|solo)$")
-    categories: list[str] = Field(default_factory=list)
+    categories: list[int] = Field(default_factory=list)
 
 
 class JoinRoomRequest(BaseModel):
@@ -38,7 +38,7 @@ class RoomResponse(BaseModel):
     mode: str
     status: str
     phase: str
-    categories: list[str]
+    categories: list[int]
     host_user_id: str
     players: list[PlayerResponse]
     current_question: QuestionResponse | None
@@ -49,7 +49,9 @@ class RoomResponse(BaseModel):
 
 
 class CategoryResponse(BaseModel):
-    id: str
+    id: int
     ru: str
     en: str
     premium: bool = False
+    icon: str | None = None
+    video: str | None = None
